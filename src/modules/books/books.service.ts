@@ -2,11 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Book } from './books.schema';
+import { CategoriesService } from '../categories/categories.service';
+import { ImportBookDto } from './dto/import-book.dto';
+import { Category, CategoryDocument } from '../categories/categories.schema';
 
 @Injectable()
 export class BooksService {
   constructor(
     @InjectModel(Book.name) private readonly bookModel: Model<Book>,
+    @InjectModel(Category.name)
+    private readonly categoryModel: Model<CategoryDocument>,
   ) {}
 
   async findAll(): Promise<Book[]> {
@@ -40,6 +45,32 @@ export class BooksService {
     const result = await this.bookModel.findByIdAndDelete(id).exec();
     if (!result) {
       throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+  }
+
+  async importBooks(books: ImportBookDto[]): Promise<void> {
+    const categories = await this.categoryModel.find().exec();
+    console.log('categories: ', categories);
+
+    for (const book of books) {
+      const category = categories.find((c) => c.code === book.category);
+
+      if (category) {
+        const existingBook = await this.bookModel
+          .findOne({ name: book.name })
+          .exec();
+        if (existingBook) {
+          await this.bookModel
+            .findByIdAndUpdate(existingBook._id, book, { new: true })
+            .exec();
+        } else {
+          const newBook = new this.bookModel({
+            ...book,
+            categoryId: category._id,
+          });
+          await newBook.save();
+        }
+      }
     }
   }
 }

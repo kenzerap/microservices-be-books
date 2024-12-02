@@ -11,10 +11,15 @@ import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BookViewModel } from './view-models/book-view.model';
+import { ImportBookDto } from './dto/import-book.dto';
+import { KafkaProducerService } from 'src/shared/kafka/kafka-producer.service';
 
 @Controller('books')
 export class BooksController {
-  constructor(private readonly booksService: BooksService) {}
+  constructor(
+    private readonly booksService: BooksService,
+    private readonly kafkaProducerService: KafkaProducerService,
+  ) {}
 
   @Get()
   async getBooks(): Promise<BookViewModel[]> {
@@ -36,6 +41,23 @@ export class BooksController {
   ): Promise<BookViewModel> {
     const book = await this.booksService.create(createBookDto);
     return new BookViewModel(book);
+  }
+
+  @Post('import')
+  async importBooks(
+    @Body() importBookDto: { products: ImportBookDto[] },
+  ): Promise<void> {
+    await this.booksService.importBooks(importBookDto.products);
+  }
+
+  @Get('kafka/public-books')
+  async kafkaPublicBooks(): Promise<void> {
+    const books = await this.booksService.findAll();
+    const modifiedBooks = books.map((book) => {
+      return new BookViewModel(book);
+    });
+
+    this.kafkaProducerService.produce('GetProductFromNestjs', [modifiedBooks]);
   }
 
   @Put(':id')

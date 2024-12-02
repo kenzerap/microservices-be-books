@@ -1,7 +1,6 @@
-import { IsString, IsNumber, IsArray, IsOptional, IsMongoId } from '@nestjs/class-validator';
-import { Types } from 'mongoose';
+import { IsString, IsNumber, IsArray, IsOptional } from '@nestjs/class-validator';
 
-export class CreateBookDto {
+export class ImportBookDto {
   @IsString()
   name: string;
 
@@ -16,8 +15,8 @@ export class CreateBookDto {
   @IsOptional()
   description?: string;
 
-  @IsMongoId()
-  categoryId: Types.ObjectId;
+  @IsString()
+  category: string;
 
   @IsNumber()
   @IsOptional()

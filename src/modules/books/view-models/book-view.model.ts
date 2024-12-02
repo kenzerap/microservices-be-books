@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { Book } from '../books.schema';
 
 export class BookViewModel {
@@ -6,7 +7,7 @@ export class BookViewModel {
   price: number;
   imageUrls: string[];
   description?: string;
-  categoryId: string;
+  categoryId: Types.ObjectId;
   soldCount: number;
   discountPercentage: number;
   createdAt: Date;
